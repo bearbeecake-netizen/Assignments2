@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Assignments">
+  <title>Assignment Timeline</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+    const { Calendar, Plus, X, CheckCircle, Trash2 } = lucide;
+
+    function AssignmentTimeline() {
+      const [assignments, setAssignments] = useState([
+        {
+          id: 1,
+          title: "Physics Lab Report",
+          course: "PHYS 201",
+          assignedDate: new Date('2025-11-01'),
+          dueDate: new Date('2025-11-15'),
+          color: '#ef4444',
+          completed: false
+        },
+        {
+          id: 2,
+          title: "Essay: Renaissance Art",
+          course: "ART 301",
+          assignedDate: new Date('2025-10-28'),
+          dueDate: new Date('2025-11-10'),
+          color: '#3b82f6',
+          completed: false
+        },
+        {
+          id: 3,
+          title: "Calculus Problem Set 8",
+          course: "MATH 152",
+          assignedDate: new Date('2025-11-02'),
+          dueDate: new Date('2025-11-08'),
+          color: '#8b5cf6',
+          completed: false
+        },
+        {
+          id: 4,
+          title: "Research Paper Draft",
+          course: "ENG 205",
+          assignedDate: new Date('2025-10-25'),
+          dueDate: new Date('2025-11-20'),
+          color: '#10b981',
+          completed: false
+        }
+      ]);
+
+      const [showAddForm, setShowAddForm] = useState(false);
+      const [selectedAssignment, setSelectedAssignment] = useState(null);
+      const [newAssignment, setNewAssignment] = useState({
+        title: '',
+        course: '',
+        assignedDate: '',
+        dueDate: '',
+        color: '#3b82f6'
+      });
+
+      const colors = ['#ef4444', '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899'];
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const addAssignment = () => {
+        if (newAssignment.title && newAssignment.dueDate) {
+          const assignment = {
+            id: Date.now(),
+            title: newAssignment.title,
+            course: newAssignment.course || 'General',
+            assignedDate: newAssignment.assignedDate ? new Date(newAssignment.assignedDate) : new Date(),
+            dueDate: new Date(newAssignment.dueDate),
+            color: newAssignment.color,
+            completed: false
+          };
+          setAssignments([...assignments, assignment]);
+          setNewAssignment({ title: '', course: '', assignedDate: '', dueDate: '', color: '#3b82f6' });
+          setShowAddForm(false);
+        }
+      };
+
+      const deleteAssignment = (id) => {
+        setAssignments(assignments.filter(a => a.id !== id));
+        setSelectedAssignment(null);
+      };
+
+      const toggleComplete = (id) => {
+        setAssignments(assignments.map(a => 
+          a.id === id ? { ...a, completed: !a.completed } : a
+        ));
+      };
+
+      const getTimelinePosition = (date, startDate, endDate) => {
+        const total = endDate - startDate;
+        const current = date - startDate;
+        return (current / total) * 100;
+      };
+
+      const getDaysRemaining = (dueDate) => {
+        const diff = dueDate - today;
+        return Math.ceil(diff / (1000 * 60 * 60 * 24));
+      };
+
+      const getTimelineData = () => {
+        const allDates = assignments.flatMap(a => [a.assignedDate, a.dueDate]);
+        const minDate = new Date(Math.min(...allDates, today));
+        const maxDate = new Date(Math.max(...allDates));
+        
+        minDate.setDate(minDate.getDate() - 2);
+        maxDate.setDate(maxDate.getDate() + 2);
+
+        return { minDate, maxDate };
+      };
+
+      const { minDate, maxDate } = getTimelineData();
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+          <div className="bg-white shadow-sm sticky top-0 z-10">
+            <div className="px-4 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar size={24} className="text-blue-600" />
+                  <h1 className="text-xl font-bold text-slate-800">Assignments</h1>
+                </div>
+                <button
+                  onClick={() => setShowAddForm(!showAddForm)}
+                  className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                >
+                  <Plus size={16} />
+                  <span className="hidden sm:inline">Add</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {showAddForm && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 z-20 flex items-end sm:items-center justify-center">
+              <div className="bg-white w-full sm:max-w-md sm:rounded-xl rounded-t-xl p-6 max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold">New Assignment</h3>
+                  <button onClick={() => setShowAddForm(false)}>
+                    <X size={24} className="text-slate-400" />
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
+                    <input
+                      type="text"
+                      placeholder="Assignment title"
+                      value={newAssignment.title}
+                      onChange={(e) => setNewAssignment({...newAssignment, title: e.target.value})}
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Course</label>
+                    <input
+                      type="text"
+                      placeholder="e.g., MATH 101"
+                      value={newAssignment.course}
+                      onChange={(e) => setNewAssignment({...newAssignment, course: e.target.value})}
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Assigned Date</label>
+                    <input
+                      type="date"
+                      value={newAssignment.assignedDate}
+                      onChange={(e) => setNewAssignment({...newAssignment, assignedDate: e.target.value})}
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Due Date</label>
+                    <input
+                      type="date"
+                      value={newAssignment.dueDate}
+                      onChange={(e) => setNewAssignment({...newAssignment, dueDate: e.target.value})}
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Color</label>
+                    <div className="flex gap-2">
+                      {colors.map(color => (
+                        <button
+                          key={color}
+                          onClick={() => setNewAssignment({...newAssignment, color})}
+                          className="w-10 h-10 rounded-full border-2 transition-transform hover:scale-110"
+                          style={{ 
+                            backgroundColor: color,
+                            borderColor: newAssignment.color === color ? '#1e293b' : color
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-6">
+                  <button
+                    onClick={addAssignment}
+                    className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium"
+                  >
+                    Add Assignment
+                  </button>
+                  <button
+                    onClick={() => setShowAddForm(false)}
+                    className="flex-1 bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 font-medium"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {selectedAssignment && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 z-20 flex items-end sm:items-center justify-center">
+              <div className="bg-white w-full sm:max-w-md sm:rounded-xl rounded-t-xl p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-slate-800 mb-1">{selectedAssignment.title}</h3>
+                    <p className="text-slate-600">{selectedAssignment.course}</p>
+                  </div>
+                  <button onClick={() => setSelectedAssignment(null)}>
+                    <X size={24} className="text-slate-400" />
+                  </button>
+                </div>
+                <div className="space-y-3 mb-6">
+                  <div>
+                    <p className="text-sm text-slate-500">Assigned</p>
+                    <p className="font-medium">{selectedAssignment.assignedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500">Due Date</p>
+                    <p className="font-medium">{selectedAssignment.dueDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500">Time Remaining</p>
+                    <p className="font-medium">
+                      {getDaysRemaining(selectedAssignment.dueDate) > 0 
+                        ? `${getDaysRemaining(selectedAssignment.dueDate)} days`
+                        : `${Math.abs(getDaysRemaining(selectedAssignment.dueDate))} days overdue`
+                      }
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => toggleComplete(selectedAssignment.id)}
+                    className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle size={20} />
+                    {selectedAssignment.completed ? 'Mark Incomplete' : 'Mark Complete'}
+                  </button>
+                  <button
+                    onClick={() => deleteAssignment(selectedAssignment.id)}
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="p-4">
+            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
+              <div className="relative">
+                <div className="absolute left-0 w-0.5 bg-blue-600 rounded z-10" 
+                     style={{ 
+                       top: '40px',
+                       height: `${assignments.length * 70}px`,
+                       left: `${getTimelinePosition(today, minDate, maxDate)}%`
+                     }}>
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap">
+                    Today
+                  </div>
+                </div>
+
+                <div className="mb-6 pt-4">
+                  <div className="flex justify-between text-xs text-slate-500 mb-2">
+                    <span>{minDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                    <span className="hidden sm:inline">{maxDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                  </div>
+                  <div className="h-1 bg-slate-200 rounded-full" />
+                </div>
+
+                <div className="space-y-3">
+                  {assignments.map((assignment) => {
+                    const startPos = getTimelinePosition(assignment.assignedDate, minDate, maxDate);
+                    const endPos = getTimelinePosition(assignment.dueDate, minDate, maxDate);
+                    const width = endPos - startPos;
+                    const daysLeft = getDaysRemaining(assignment.dueDate);
+                    const isPast = daysLeft < 0;
+
+                    return (
+                      <div key={assignment.id} className="relative h-14">
+                        <div className="absolute inset-0 flex items-center">
+                          <div
+                            onClick={() => setSelectedAssignment(assignment)}
+                            className="h-12 rounded-lg transition-all duration-300 relative cursor-pointer"
+                            style={{
+                              left: `${startPos}%`,
+                              width: `${width}%`,
+                              backgroundColor: assignment.completed ? '#cbd5e1' : assignment.color,
+                              opacity: assignment.completed ? 0.5 : isPast ? 0.6 : 1
+                            }}
+                          >
+                            <div className="absolute inset-0 flex items-center px-2 sm:px-3">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <CheckCircle 
+                                  size={16}
+                                  className={`flex-shrink-0 ${assignment.completed ? 'fill-white' : ''} text-white`}
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <div className={`text-white font-semibold text-xs sm:text-sm truncate ${assignment.completed ? 'line-through' : ''}`}>
+                                    {assignment.title}
+                                  </div>
+                                  <div className="text-white text-xs opacity-90 hidden sm:block">
+                                    {assignment.course}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 bg-white rounded-xl shadow-lg p-4">
+              <h3 className="font-semibold text-slate-800 mb-2 text-sm">How it works:</h3>
+              <ul className="space-y-1 text-slate-600 text-xs">
+                <li>• Tap any bar to see details and mark complete</li>
+                <li>• Each bar shows time from assigned to due date</li>
+                <li>• Blue line marks today</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<AssignmentTimeline />);
+  </script>
+</body>
+</html>
